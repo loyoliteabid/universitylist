@@ -4,13 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { SortBy, University } from "../models/datatypes";
 import UniversityListItem from "../components/UniversityListItem";
 import {
+  deleteUniversityById,
   filterUniversitiesByName,
   formatAndStoreData,
   universityDataKey,
 } from "../controllers/unversity-list";
 import { useHttpClient } from "../hooks/http-hooks";
 import UniversityListItemSkeleton from "../components/UniversityListItemSkeleton";
-import { getData, storeData } from "../utils/LocalStorage";
+import { getData } from "../utils/LocalStorage";
 import SearchUniversityName from "../components/SearchUniversityName";
 import SortByUniversityName from "../components/SortByUniversityName";
 
@@ -53,39 +54,9 @@ const UniversityList = () => {
     }
   }, [sortUniversities, initializeData]);
 
-  const onDeleteItem = useCallback(
-    (id: string, isLastItem: boolean) => {
-      const onDeleteItemEx = () => {
-        const upatedList = universities.filter((item) => item.id !== id);
-
-        //  update browser storage for caching
-        storeData(universityDataKey, upatedList);
-        setUniversities(upatedList);
-      };
-
-      if (isLastItem) {
-        onDeleteItemEx();
-      } else {
-        // Animate list item opacity on delete
-        const listItem = document.getElementById(`university_${id}`);
-        if (listItem) {
-          listItem.classList.add("opacity-0");
-          setTimeout(() => {
-            const listItem = document.getElementById(`university_${id}`);
-            if (listItem) {
-              listItem.remove();
-            }
-          }, 300); // Adjust the duration as needed
-        }
-        onDeleteItemEx();
-      }
-    },
-    [universities]
-  );
-
   const handleTryAgain = () => {
     clearError();
-    window.location.reload(); // Refresh the page
+    initializeData(); // Recalls the api
   };
 
   useEffect(() => {
@@ -121,7 +92,12 @@ const UniversityList = () => {
             <UniversityListItem
               item={item}
               onDelete={() =>
-                onDeleteItem(item.id, i === universities.length - 1)
+                deleteUniversityById(
+                  item.id,
+                  i === universities.length - 1,
+                  universities,
+                  setUniversities
+                )
               }
               key={`university_${i}`}
             />
@@ -134,10 +110,13 @@ const UniversityList = () => {
       {!!error && (
         <div className="flex flex-col items-center justify-center bg-red-50 text-red-700 p-4 rounded shadow-sm">
           <p>Error: {error.message}</p>
-          <button onClick={handleTryAgain}>Try Again</button>
+          <p>Please check your internet connection</p>
+          <button onClick={handleTryAgain} className="underline font-semibold">
+            Try Again
+          </button>
         </div>
       )}
-      {universities.length === 0 && !isLoading && (
+      {universities.length === 0 && !isLoading && !error && (
         <div className="flex flex-col items-center justify-center bg-red-50 text-red-700 p-4 rounded shadow-sm">
           <p>No data found</p>
         </div>

@@ -49,4 +49,36 @@ const filterUniversitiesByName = async (
   }
 };
 
-export { formatAndStoreData, universityDataKey, filterUniversitiesByName };
+const deleteUniversityById = (
+  id: string,
+  isLastItem: boolean,
+  list: University[],
+  callBack: (u: University[]) => void
+) => {
+  const onDeleteItemEx = () => {
+    const upatedList = list.filter((item) => item.id !== id);
+
+    //  update browser storage for caching
+    storeData(universityDataKey, upatedList);
+    callBack(upatedList);
+  };
+
+  if (isLastItem) {
+    onDeleteItemEx();
+  } else {
+    // Animate list item opacity on delete
+    const listItem = document.getElementById(`university_${id}`);
+    if (listItem) {
+      // After the animation , I see some item's empty space is visible, so appending hidden to the class
+      listItem.classList.add("hidden");
+    }
+    onDeleteItemEx();
+  }
+};
+
+export {
+  formatAndStoreData,
+  universityDataKey,
+  filterUniversitiesByName,
+  deleteUniversityById,
+};
